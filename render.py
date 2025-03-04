@@ -10,7 +10,7 @@ SCREEN_SIZE = 600
 
 
 def to_pixel_points(x, y):
-    return x * 20 + SCREEN_SIZE / 2, -y * 20 + SCREEN_SIZE / 2
+    return x * 30 + SCREEN_SIZE / 2, -y * 30 + SCREEN_SIZE / 2
 
 
 def draw_polygon(screen, polygon, color=THECOLORS['blue']):
@@ -49,32 +49,56 @@ def render():
                 return
 
 
+acceleration = 3
+
+
 def loop(screen, clock, ship, asteroids):
     screen.fill(THECOLORS['white'])
 
-    # 绘制飞船和陨石
-    draw_polygon(screen, ship)
+    milliseconds = clock.get_time()
+
+    # 绘制陨石
     for asteroid in asteroids:
+        asteroid.move(milliseconds)
         draw_polygon(screen, asteroid, THECOLORS['red'])
 
-    # 发射激光
-    laser = ship.laser_segment()
     keys = pygame.key.get_pressed()
+    # 控制飞船的旋转
+    if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and (keys[pygame.K_RIGHT] or keys[pygame.K_d]):
+        pass
+    else:
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            ship.rotation += 0.03
+            if ship.rotation > 2 * math.pi:
+                ship.rotation -= 2 * math.pi
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            ship.rotation -= 0.03
+            if ship.rotation < 0:
+                ship.rotation += 2 * math.pi
+
+    # 控制飞船的移动
+    ship_color = THECOLORS['blue']
+    if keys[pygame.K_UP] or keys[pygame.K_w]:
+        # 计算飞船的方向
+        ax = acceleration * math.sin(-ship.rotation)
+        ay = acceleration * math.cos(-ship.rotation)
+        ship.vx += ax * milliseconds / 1000.0
+        ship.vy += ay * milliseconds / 1000.0
+        ship_color = THECOLORS['green']
+
+    # 绘制飞船
+    ship.move(milliseconds)
+    draw_polygon(screen, ship, ship_color)
+
+    # 发射激光
     if keys[pygame.K_SPACE]:
+        laser = ship.laser_segment()
         draw_segment(screen, laser, THECOLORS['green'])
         # 检查激光是否击中陨石
         for asteroid in asteroids:
             if asteroid.does_intersect(laser):
                 logging.info('Hit!')
                 asteroids.remove(asteroid)
-    elif keys[pygame.K_LEFT]:
-        ship.rotation += 0.03
-        if ship.rotation > 2 * math.pi:
-            ship.rotation -= 2 * math.pi
-    elif keys[pygame.K_RIGHT]:
-        ship.rotation -= 0.03
-        if ship.rotation < 0:
-            ship.rotation += 2 * math.pi
 
     pygame.display.flip()
     clock.tick(30)

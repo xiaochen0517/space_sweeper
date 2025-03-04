@@ -45,6 +45,8 @@ class PolygonModel():
         self.rotation = 0
         self.x = 0
         self.y = 0
+        self.vx = 0
+        self.vy = 0
 
     def rotate_point(self, x, y):
         # 旋转点
@@ -65,6 +67,19 @@ class PolygonModel():
             end = self.transformed()[(i + 1) % len(self.points)]
             if segments_intersect(start, end, line[0], line[1]):
                 return True
+
+    def move(self, milliseconds):
+        dx, dy = (self.vx * milliseconds / 1000.0, self.vy * milliseconds / 1000.0)
+        self.x, self.y = vectors.add((self.x, self.y), (dx, dy))
+
+        if self.x > 10:
+            self.x -= 20
+        if self.x < -10:
+            self.x += 20
+        if self.y > 10:
+            self.y -= 20
+        if self.y < -10:
+            self.y += 20
 
 
 class ShipModel(PolygonModel):
@@ -91,3 +106,5 @@ class Asteroid(PolygonModel):
         super().__init__(vs)
         self.x = randint(-10, 10)
         self.y = randint(-10, 10)
+        self.vx = uniform(-1, 1)
+        self.vy = uniform(-1, 1)
